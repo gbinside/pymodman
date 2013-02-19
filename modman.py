@@ -13,6 +13,7 @@
 # 
 # $Id: modman.py 19/02/2013 15:59:08 Roberto $
 # --------------
+import platform
 import sys
 import re
 import os
@@ -30,6 +31,20 @@ def require_wc(module, folder = '.modman'):
     if not os.path.exists(os.path.join(folder, module, 'modman')):
         print 'ERROR: %s does not contain a "modman" module description file.' % module
         return 1
+    return 0
+
+def symlink(src, dst):
+    if platform.system() == 'Windows':
+        if os.path.isdir(src):
+            retcode = os.system('mklink /J "%s" "%s"' % (dst, src ))
+        else:
+            retcode = os.system('mklink /H "%s" "%s"' % (dst, src ))
+        if retcode:
+            print "There was an error"
+            if options.debug: print "retcode", retcode
+            return retcode
+    else: #i hope is linux
+        os.symlink(src, dst)
     return 0
 
 def init(options, args):
@@ -89,11 +104,11 @@ def deploy(options, args):
         if options.debug: print 'from ==>', da
         if options.debug: print ' to  ==>', a
         try:
-            os.makedirs ( os.path.join(base_path, os.path.dirname(a) ) )
+            os.makedirs ( os.path.join(base_path, os.path.dirname(a.strip(os.sep)) ) )
         except:
             pass
         if options.debug: print ( os.path.join('.modman', module, da) , os.path.join(base_path,a) )
-        #todo continuare da qui
+        symlink( os.path.join('.modman', module, da) , os.path.join(base_path,a) )
     return 0
 
 def main(options, args):
