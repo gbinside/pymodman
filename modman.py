@@ -14,6 +14,7 @@
 # $Id: modman.py 19/02/2013 15:59:08 Roberto $
 # --------------
 import sys
+import re
 import os
 
 class Quiet:
@@ -21,6 +22,15 @@ class Quiet:
         return
     def write(self,s):
         return
+
+def require_wc(module, folder = '.modman'):
+    if not os.path.exists(os.path.join(folder, module)):
+        print "ERROR: %s has not been checked out." % module
+        return 1
+    if not os.path.exists(os.path.join(folder, module, 'modman')):
+        print 'ERROR: %s does not contain a "modman" module description file.' % module
+        return 1
+    return 0
 
 def init(options, args):
     str_message = ''
@@ -45,12 +55,53 @@ def init(options, args):
         str_message = "with basedir at '"+basedir+"'"
     print "Initialized Module Manager at '"+os.getcwd()+"' "+str_message
     return 0
-    
+
+def clone(options, args):
+    predir = os.getcwd()
+    #todo implementare basedir
+    using_basedir = ''
+    os.chdir('.modman')
+    s_args = ''.join(args)
+    retcode = os.system('git clone '+s_args)
+    if retcode:
+        print "There was an error"
+        if options.debug: print "retcode", retcode
+        return retcode
+    module = ''.join(re.findall(r'.*?/([^/.]*)', s_args, re.I))
+
+    print "Successfully cloned new module '"+module+"' "+using_basedir
+    os.chdir(predir)
+
+    return main(options, ['deploy',module])
+
+def deploy(options, args):
+    module = args[0]
+    base_path = os.getcwd() #todo implementare basedir
+    retcode = require_wc(module)
+    if retcode: return retcode
+    modman_file = os.path.join('.modman', module, 'modman')
+    for line in open(modman_file):
+        if options.debug: print 'line ==>', line,
+        line = line.strip('\n\r ')
+        da, a = re.split('\s+', line, maxsplit=1)
+        da = da.replace('/', os.sep)
+        a  =  a.replace('/', os.sep)
+        if options.debug: print 'from ==>', da
+        if options.debug: print ' to  ==>', a
+        try:
+            os.makedirs ( os.path.join(base_path, os.path.dirname(a) ) )
+        except:
+            pass
+        if options.debug: print ( os.path.join('.modman', module, da) , os.path.join(base_path,a) )
+        #todo continuare da qui
+    return 0
 
 def main(options, args):
     if options.debug: print(options, args)
     switch = {
         'init':init,
+        'clone':clone,
+        'deploy':deploy,
     }
     if args[0] in switch:
         return switch[args[0]](options, args[1:])
