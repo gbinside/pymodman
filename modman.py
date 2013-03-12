@@ -56,13 +56,31 @@ def init(options, args):
     print "Initialized Module Manager at '"+os.getcwd()+"' "+str_message
     return 0
 
+def update(options, args):
+    predir = os.getcwd()
+    #todo implementare basedir
+    using_basedir = ''
+    module = args[0]
+    os.chdir ( os.path.join ( '.modman', module ) )
+    s_args = ''.join(args)
+    retcode = os.system('git pull')
+    if retcode:
+        print "There was an error"
+        if options.debug: print "retcode", retcode
+        return retcode
+
+    print "Successfully updated module '"+module+"' "+using_basedir
+    os.chdir(predir)
+
+    return main(options, ['deploy',module])
+
 def clone(options, args):
     predir = os.getcwd()
     #todo implementare basedir
     using_basedir = ''
-    os.chdir('.modman')
+    os.chdir ( '.modman' )
     s_args = ''.join(args)
-    retcode = os.system('git clone '+s_args)
+    retcode = os.system('git clone' + s_args)
     if retcode:
         print "There was an error"
         if options.debug: print "retcode", retcode
@@ -101,10 +119,13 @@ def main(options, args):
     switch = {
         'init':init,
         'clone':clone,
+        'update':update,
         'deploy':deploy,
     }
-    if args[0] in switch:
+    if args and args[0] in switch:
         return switch[args[0]](options, args[1:])
+    else:
+        print "Use -h for help"
     return 0
 
 if __name__=="__main__":
