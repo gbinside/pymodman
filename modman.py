@@ -33,15 +33,19 @@ def require_wc(module, folder = '.modman'):
         return 1
     return 0
 
-def symlink(src, dst):
+def symlink(src, dst, verbose=False):
     if platform.system() == 'Windows':
         if os.path.isdir(src):
-            retcode = os.system('mklink /J "%s" "%s"' % (dst, src ))
+            cmd = 'mklink /J "%s" "%s"' % (dst, src )
+            if verbose: print cmd
+            retcode = os.system(cmd)
         else:
-            retcode = os.system('mklink /H "%s" "%s"' % (dst, src ))
+            cmd = 'mklink "%s" "%s"' % (dst, src )
+            if verbose: print cmd
+            retcode = os.system(cmd)
         if retcode:
             print "There was an error"
-            if options.debug: print "retcode", retcode
+            if verbose: print "retcode", retcode
             return retcode
     else: #i hope is linux
         os.symlink(src, dst)
@@ -125,8 +129,8 @@ def deploy(options, args):
             os.makedirs ( os.path.join(base_path, os.path.dirname(a.strip(os.sep)) ) )
         except:
             pass
-        if options.debug: print ( os.path.join('.modman', module, da) , os.path.join(base_path,a) )
-        symlink( os.path.join('.modman', module, da) , os.path.join(base_path,a) )
+        if options.debug: print ( os.path.abspath ( os.path.join('.modman', module, da) ) , os.path.abspath ( os.path.join(base_path,a) ) )
+        symlink( os.path.abspath ( os.path.join('.modman', module, da) ) , os.path.abspath ( os.path.join(base_path,a) ) , options.debug)
     return 0
 
 def main(options, args):
